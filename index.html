@@ -3,260 +3,996 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>3D Digital Fashion Studio</title>
+  <title>Digital 3D Fashion Studio & Wardrobe Engine</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
   <style>
-    body { margin: 0; overflow: hidden; background-color: #090d16; }
+    body { margin: 0; overflow: hidden; background-color: #070a12; }
     input[type=range] { accent-color: #6366f1; }
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: #0b0f19; }
+    ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 4px; }
   </style>
 </head>
 <body class="text-slate-100 font-sans flex h-screen w-screen select-none">
 
-  <!-- Left Sidebar -->
-  <div class="w-80 bg-slate-900 border-r border-slate-800 p-5 flex flex-col justify-between overflow-y-auto z-10">
+  <!-- ဘယ်ဘက်ခြမ်း: Body Proportions & Garment Selection -->
+  <div class="w-[360px] bg-slate-900/95 border-r border-slate-800 p-4 flex flex-col justify-between overflow-y-auto z-10 backdrop-blur-md">
     <div class="space-y-4">
       <div>
-        <h1 class="text-lg font-bold text-white flex items-center gap-2">👔 FASHION STUDIO 3D</h1>
-        <p class="text-xs text-slate-400">Parametric Fit & Style Engine</p>
+        <h1 class="text-base font-bold text-white flex items-center gap-2">
+          <span>👔</span> FASHION STUDIO 3D
+        </h1>
+        <p class="text-[11px] text-slate-400">Parametric Fit, Garment Tech & Wardrobe Engine</p>
       </div>
 
-      <div class="flex bg-slate-950 p-1 rounded-lg border border-slate-800">
-        <button id="btn-male" class="flex-1 py-1 text-xs font-semibold rounded bg-indigo-600 text-white">Male</button>
-        <button id="btn-female" class="flex-1 py-1 text-xs font-semibold rounded text-slate-400">Female</button>
+      <!-- Gender & Measurement Units Toggles -->
+      <div class="grid grid-cols-2 gap-2">
+        <div class="flex bg-slate-950 p-1 rounded-lg border border-slate-800">
+          <button id="btn-male" class="flex-1 py-1 text-xs font-semibold rounded bg-indigo-600 text-white transition">Male</button>
+          <button id="btn-female" class="flex-1 py-1 text-xs font-semibold rounded text-slate-400 hover:text-white transition">Female</button>
+        </div>
+        <div class="flex bg-slate-950 p-1 rounded-lg border border-slate-800">
+          <button id="btn-unit-cm" class="flex-1 py-1 text-xs font-semibold rounded bg-slate-800 text-white transition">CM</button>
+          <button id="btn-unit-in" class="flex-1 py-1 text-xs font-semibold rounded text-slate-400 hover:text-white transition">INCH</button>
+        </div>
       </div>
 
+      <!-- Skin Tone Palettes -->
       <div>
-        <label class="text-xs font-medium text-slate-400 mb-1 block">Skin Tone</label>
+        <label class="text-[11px] font-medium text-slate-400 mb-1.5 block">Skin / Clay Tone</label>
         <div class="flex gap-2" id="skin-palettes"></div>
       </div>
 
-      <div class="space-y-3">
-        <div class="text-xs font-semibold text-slate-300 uppercase">Body Scale (cm)</div>
+      <!-- Body Measurement Sliders -->
+      <div class="space-y-2.5 bg-slate-950/60 p-3 rounded-xl border border-slate-800/80">
+        <div class="text-xs font-semibold text-indigo-400 uppercase tracking-wider flex justify-between">
+          <span>Body Measurements</span>
+          <span id="unit-indicator" class="text-[10px] text-slate-400">Metric (cm)</span>
+        </div>
+        
         <div>
-          <div class="flex justify-between text-xs mb-1">
-            <span class="text-slate-400">Height</span><span id="val-height" class="text-indigo-400 font-mono">175 cm</span>
+          <div class="flex justify-between text-[11px] mb-1">
+            <span class="text-slate-400">အရပ်အမြင့် (Height)</span>
+            <span id="val-height" class="font-mono text-indigo-300">175 cm</span>
           </div>
           <input type="range" id="slider-height" min="150" max="205" value="175" class="w-full h-1 bg-slate-800 rounded appearance-none cursor-pointer" />
         </div>
+
         <div>
-          <div class="flex justify-between text-xs mb-1">
-            <span class="text-slate-400">Shoulder</span><span id="val-shoulder" class="text-indigo-400 font-mono">46 cm</span>
+          <div class="flex justify-between text-[11px] mb-1">
+            <span class="text-slate-400">ပုခုံးအကျယ် (Shoulder)</span>
+            <span id="val-shoulder" class="font-mono text-indigo-300">46 cm</span>
           </div>
           <input type="range" id="slider-shoulder" min="36" max="58" value="46" class="w-full h-1 bg-slate-800 rounded appearance-none cursor-pointer" />
         </div>
+
         <div>
-          <div class="flex justify-between text-xs mb-1">
-            <span class="text-slate-400">Chest</span><span id="val-chest" class="text-indigo-400 font-mono">96 cm</span>
+          <div class="flex justify-between text-[11px] mb-1">
+            <span class="text-slate-400">ရင်အုပ် (Chest)</span>
+            <span id="val-chest" class="font-mono text-indigo-300">96 cm</span>
           </div>
           <input type="range" id="slider-chest" min="75" max="125" value="96" class="w-full h-1 bg-slate-800 rounded appearance-none cursor-pointer" />
         </div>
+
         <div>
-          <div class="flex justify-between text-xs mb-1">
-            <span class="text-slate-400">Waist</span><span id="val-waist" class="text-indigo-400 font-mono">78 cm</span>
+          <div class="flex justify-between text-[11px] mb-1">
+            <span class="text-slate-400">ခါးဆိုဒ် (Waist)</span>
+            <span id="val-waist" class="font-mono text-indigo-300">78 cm</span>
           </div>
           <input type="range" id="slider-waist" min="60" max="110" value="78" class="w-full h-1 bg-slate-800 rounded appearance-none cursor-pointer" />
         </div>
+
         <div>
-          <div class="flex justify-between text-xs mb-1">
-            <span class="text-slate-400">Leg Length</span><span id="val-leg" class="text-indigo-400 font-mono">102 cm</span>
+          <div class="flex justify-between text-[11px] mb-1">
+            <span class="text-slate-400">လက်အရှည် (Arm)</span>
+            <span id="val-arm" class="font-mono text-indigo-300">62 cm</span>
+          </div>
+          <input type="range" id="slider-arm" min="50" max="75" value="62" class="w-full h-1 bg-slate-800 rounded appearance-none cursor-pointer" />
+        </div>
+
+        <div>
+          <div class="flex justify-between text-[11px] mb-1">
+            <span class="text-slate-400">ခြေတံအရှည် (Leg)</span>
+            <span id="val-leg" class="font-mono text-indigo-300">102 cm</span>
           </div>
           <input type="range" id="slider-leg" min="80" max="120" value="102" class="w-full h-1 bg-slate-800 rounded appearance-none cursor-pointer" />
         </div>
       </div>
+
+      <!-- Apparel Hierarchical Selectors -->
+      <div class="space-y-3 pt-1">
+        <div class="text-xs font-semibold text-slate-300 uppercase tracking-wider border-b border-slate-800 pb-1">
+          Apparel Hierarchical Selection
+        </div>
+
+        <!-- Category & Item Selector for Top -->
+        <div class="space-y-1">
+          <label class="text-[11px] text-slate-300 font-medium">Top Category & Sub-Type</label>
+          <div class="grid grid-cols-2 gap-1.5">
+            <select id="sel-top-main" class="bg-slate-950 border border-slate-800 rounded p-1.5 text-xs text-slate-200"></select>
+            <select id="sel-top-sub" class="bg-slate-950 border border-slate-800 rounded p-1.5 text-xs text-slate-200"></select>
+          </div>
+        </div>
+
+        <!-- Category & Item Selector for Bottom -->
+        <div class="space-y-1">
+          <label class="text-[11px] text-slate-300 font-medium">Bottom Category & Sub-Type</label>
+          <div class="grid grid-cols-2 gap-1.5">
+            <select id="sel-bottom-main" class="bg-slate-950 border border-slate-800 rounded p-1.5 text-xs text-slate-200"></select>
+            <select id="sel-bottom-sub" class="bg-slate-950 border border-slate-800 rounded p-1.5 text-xs text-slate-200"></select>
+          </div>
+        </div>
+
+        <!-- Footwear Selector -->
+        <div class="space-y-1">
+          <label class="text-[11px] text-slate-300 font-medium">Footwear Category & Style</label>
+          <div class="grid grid-cols-2 gap-1.5">
+            <select id="sel-shoe-main" class="bg-slate-950 border border-slate-800 rounded p-1.5 text-xs text-slate-200"></select>
+            <select id="sel-shoe-sub" class="bg-slate-950 border border-slate-800 rounded p-1.5 text-xs text-slate-200"></select>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <button id="btn-export" class="w-full mt-4 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold py-2 rounded-lg transition active:scale-95">
+    <!-- Export Button -->
+    <button id="btn-export" class="w-full mt-4 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold py-2.5 rounded-lg transition active:scale-95 flex items-center justify-center gap-2">
       📷 Export Lookbook PNG
     </button>
   </div>
 
-  <!-- Center Viewport -->
+  <!-- အလယ်: 3D Viewport & Overlay Badges -->
   <div class="flex-1 relative flex items-center justify-center">
-    <div id="status-container" class="absolute top-5 left-5 z-20 max-w-sm"></div>
+    <!-- Status & Conflict Warning Notification -->
+    <div id="status-container" class="absolute top-4 left-4 z-20 max-w-sm"></div>
+
+    <!-- Quick Action Bar -->
+    <div class="absolute bottom-5 z-20 flex gap-2.5">
+      <button id="btn-add-wardrobe" class="bg-slate-900/90 hover:bg-slate-800 border border-slate-700 text-slate-200 text-xs px-3.5 py-2 rounded-lg backdrop-blur-md transition flex items-center gap-1.5 active:scale-95">
+        <span>➕</span> Add to Wardrobe
+      </button>
+      <button id="btn-outfit-generator" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs px-4 py-2 rounded-lg shadow-lg shadow-indigo-500/20 backdrop-blur-md transition flex items-center gap-1.5 active:scale-95">
+        <span>✨</span> Daily Outfit Generator
+      </button>
+      <button id="btn-view-wardrobe" class="bg-slate-900/90 hover:bg-slate-800 border border-slate-700 text-slate-200 text-xs px-3.5 py-2 rounded-lg backdrop-blur-md transition flex items-center gap-1.5">
+        <span>🚪</span> Wardrobe (<span id="wardrobe-count">0</span>)
+      </button>
+    </div>
+
     <div id="canvas-container" class="w-full h-full cursor-grab active:cursor-grabbing"></div>
   </div>
 
-  <!-- Right Sidebar -->
-  <div class="w-80 bg-slate-900 border-l border-slate-800 p-5 flex flex-col justify-between overflow-y-auto z-10">
+  <!-- ညာဘက်ခြမ်း: Apparel Tech, Attributes, Formality & Vibe -->
+  <div class="w-[340px] bg-slate-900/95 border-l border-slate-800 p-4 flex flex-col justify-between overflow-y-auto z-10 backdrop-blur-md">
     <div class="space-y-4">
-      <div class="text-xs font-semibold text-slate-300 uppercase border-b border-slate-800 pb-2">Wardrobe Selector</div>
-      <div>
-        <label class="text-xs text-slate-300 block mb-1">Top</label>
-        <select id="select-top" class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-xs text-slate-200"></select>
+      <div class="text-xs font-semibold text-slate-300 uppercase tracking-wider border-b border-slate-800 pb-1">
+        Apparel Garment Tech & Specs
       </div>
-      <div>
-        <label class="text-xs text-slate-300 block mb-1">Bottom</label>
-        <select id="select-bottom" class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-xs text-slate-200"></select>
+
+      <!-- Garment Tech: Textiles & Weaves -->
+      <div class="bg-slate-950/70 p-3 rounded-xl border border-slate-800/80 space-y-2.5">
+        <div class="text-[11px] font-semibold text-indigo-400 uppercase">Manufacturing Tech</div>
+        
+        <div>
+          <label class="text-[10px] text-slate-400 block mb-1">ချည်သား အမျိုးအစား (Fiber / Textile)</label>
+          <select id="tech-fiber" class="w-full bg-slate-900 border border-slate-800 rounded p-1.5 text-xs text-slate-200">
+            <option>Combed Cotton (နူးညံ့ချည်သား)</option>
+            <option>Slub Cotton (အဖုအထစ် ချည်ကြမ်းသိုက်)</option>
+            <option>Linen (လျှော်ချည် အေးမြသား)</option>
+            <option>Silk (ပိုးသား ချောမွေ့)</option>
+            <option>Wool (သိုးမွှေးသား အနွေး)</option>
+            <option>Polyester (စိုစွတ်ခံ နိုင်လွန်ရောစပ်)</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="text-[10px] text-slate-400 block mb-1">ယက်လုပ်မှုပုံစံ (Weave Construction)</label>
+          <select id="tech-weave" class="w-full bg-slate-900 border border-slate-800 rounded p-1.5 text-xs text-slate-200">
+            <option>Single Jersey (တီရှပ်သုံး သာမန်ယက်)</option>
+            <option>French Terry (ဆွယ်တာ အနုသား)</option>
+            <option>Fleece (အတွင်းမွေးပါ အထူ)</option>
+            <option>Twill (ဂျင်းနှင့် ချီနိုယက်စောင်း)</option>
+            <option>Oxford Weave (ရှပ်သုံး အကွက်နုယက်)</option>
+            <option>Ripstop (စစ်သုံး လေထီးကြမ်းယက်)</option>
+          </select>
+        </div>
+
+        <div>
+          <div class="flex justify-between text-[10px] text-slate-400 mb-1">
+            <span>ပိတ်စအထူအပါး (Fabric Weight)</span>
+            <span id="val-gsm" class="text-indigo-300 font-mono">220 GSM</span>
+          </div>
+          <input type="range" id="slider-gsm" min="140" max="380" step="20" value="220" class="w-full h-1 bg-slate-800 rounded appearance-none cursor-pointer" />
+        </div>
       </div>
-      <div>
-        <label class="text-xs text-slate-300 block mb-1">Footwear</label>
-        <select id="select-shoes" class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-xs text-slate-200"></select>
+
+      <!-- Color Family Selection -->
+      <div class="bg-slate-950/70 p-3 rounded-xl border border-slate-800/80 space-y-2">
+        <div class="text-[11px] font-semibold text-indigo-400 uppercase">Color Family</div>
+        <div class="text-[10px] text-slate-400">Top Fabric Color:</div>
+        <div class="flex flex-wrap gap-1.5" id="top-colors"></div>
+        <div class="text-[10px] text-slate-400 pt-1">Bottom Fabric Color:</div>
+        <div class="flex flex-wrap gap-1.5" id="bottom-colors"></div>
+      </div>
+
+      <!-- Layer Placement, Formality, Vibe Badges -->
+      <div class="bg-slate-950/70 p-3 rounded-xl border border-slate-800/80 space-y-3">
+        <div class="text-[11px] font-semibold text-indigo-400 uppercase">Item Attributes & Rules</div>
+        
+        <!-- Layer & Placement -->
+        <div>
+          <span class="text-[10px] text-slate-400 block">Layer & Placement:</span>
+          <span id="badge-layer" class="inline-block mt-0.5 px-2 py-0.5 bg-slate-800 text-indigo-300 rounded text-[11px] font-mono">
+            Inner / Base Layer
+          </span>
+        </div>
+
+        <!-- Formality Level -->
+        <div>
+          <div class="flex justify-between text-[10px] text-slate-400">
+            <span>Formality Level:</span>
+            <span id="badge-formality-num" class="text-indigo-400 font-mono font-bold">Level 2</span>
+          </div>
+          <div id="badge-formality-name" class="text-xs font-semibold text-slate-200 mt-0.5">Casual / Street</div>
+        </div>
+
+        <!-- Aesthetic / Vibe -->
+        <div>
+          <span class="text-[10px] text-slate-400 block">Aesthetic / Vibe:</span>
+          <div id="badge-vibe" class="text-xs font-semibold text-emerald-400 mt-0.5">Streetwear / Casual</div>
+        </div>
       </div>
     </div>
   </div>
 
+  <!-- Digital Wardrobe Modal Drawer -->
+  <div id="wardrobe-modal" class="hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg p-5 space-y-4 max-h-[85vh] flex flex-col">
+      <div class="flex justify-between items-center border-b border-slate-800 pb-2">
+        <h3 class="text-sm font-bold text-white flex items-center gap-2"><span>🚪</span> Digital Wardrobe Collection</h3>
+        <button id="btn-close-wardrobe" class="text-slate-400 hover:text-white text-sm font-bold">✕</button>
+      </div>
+      <div id="wardrobe-list" class="flex-1 overflow-y-auto space-y-2.5 pr-1"></div>
+    </div>
+  </div>
+
+  <!-- Main System Script -->
   <script>
-    const TOPS = [
-      { id: "t1", name: "Crew Neck T-Shirt", formality: 2, vibe: "Casual" },
-      { id: "t2", name: "Polo Shirt", formality: 3, vibe: "Preppy" },
-      { id: "t3", name: "Dress Shirt", formality: 4, vibe: "Business" },
-      { id: "t4", name: "Tuxedo Jacket", formality: 5, vibe: "Formal" }
-    ];
-    const BOTTOMS = [
-      { id: "b1", name: "Sweatpants", formality: 1, vibe: "Athletic" },
-      { id: "b2", name: "Cargo Pants", formality: 2, vibe: "Streetwear" },
-      { id: "b3", name: "Chinos", formality: 3, vibe: "Smart Casual" },
-      { id: "b4", name: "Dress Slacks", formality: 4, vibe: "Formal" }
-    ];
-    const SHOES = [
-      { id: "s1", name: "Chunky Runners", formality: 1, conflicts: ["Dress Slacks"] },
-      { id: "s2", name: "Minimalist Sneakers", formality: 3, conflicts: [] },
-      { id: "s3", name: "Oxford Dress Shoes", formality: 5, conflicts: ["Sweatpants", "Cargo Pants"] }
-    ];
-    const SKIN_COLORS = ["#f7d0b3", "#e0ab8b", "#c68642", "#8d5524", "#493223"];
+    // --- ၁။ Data Taxonomy (Men's, Women's, Footwear, Textiles) ---
+    const APPAREL_DATA = {
+      male: {
+        tops: {
+          "T-Shirts (တီရှပ်များ)": [
+            { id: "m_t_crew", name: "Crew Neck (လည်ဝိုင်းတီရှပ်)", formality: 2, vibe: "Casual", layer: "Inner / Base Layer" },
+            { id: "m_t_vneck", name: "V-Neck (လည်ထောင့်တီရှပ်)", formality: 2, vibe: "Casual", layer: "Inner / Base Layer" },
+            { id: "m_t_henley", name: "Henley Shirt (ရင်ဘတ်ကြယ်သီးပါ တီရှပ်)", formality: 2, vibe: "Americana / Casual", layer: "Inner / Base Layer" },
+            { id: "m_t_graphic", name: "Graphic / Printed Tees", formality: 2, vibe: "Streetwear", layer: "Inner / Base Layer" },
+            { id: "m_t_oversize", name: "Oversized / Drop-shoulder Tees", formality: 2, vibe: "Streetwear", layer: "Inner / Base Layer" }
+          ],
+          "Polo Shirts (ပိုလိုရှပ်များ)": [
+            { id: "m_polo_classic", name: "Classic Pique Polo Shirt", formality: 3, vibe: "Old Money / Preppy", layer: "Mid Layer" },
+            { id: "m_polo_knit", name: "Retro Knit Polo", formality: 3, vibe: "Smart Casual / Retro", layer: "Mid Layer" }
+          ],
+          "Shirts (ရှပ်အင်္ကျီများ)": [
+            { id: "m_sh_dress", name: "Dress Shirt (တရားဝင် ဖော်မလ်ရှပ်)", formality: 4, vibe: "Business Casual", layer: "Mid Layer" },
+            { id: "m_sh_ocbd", name: "Oxford Button-Down (OCBD)", formality: 3, vibe: "Smart Casual", layer: "Mid Layer" },
+            { id: "m_sh_flannel", name: "Flannel / Plaid Shirt (ကွက်စိပ်ရှပ်)", formality: 2, vibe: "Grunge / Americana", layer: "Mid Layer" },
+            { id: "m_sh_camp", name: "Cuban / Camp Collar Shirt", formality: 2, vibe: "Retro / Vacation", layer: "Mid Layer" },
+            { id: "m_sh_denim", name: "Denim / Chambray Shirt", formality: 3, vibe: "Workwear / Americana", layer: "Mid Layer" }
+          ],
+          "Sweaters & Knitwear": [
+            { id: "m_sw_crew", name: "Crewneck Knit Sweater", formality: 3, vibe: "Minimalist", layer: "Mid Layer" },
+            { id: "m_sw_turtle", name: "Turtleneck / Rollneck", formality: 4, vibe: "Old Money / Minimalist", layer: "Mid Layer" },
+            { id: "m_sw_cardigan", name: "Buttoned Cardigan", formality: 3, vibe: "Preppy", layer: "Mid Layer" },
+            { id: "m_sw_cable", name: "Cable-knit Sweater", formality: 3, vibe: "Old Money / Preppy", layer: "Mid Layer" }
+          ],
+          "Sweatshirts & Hoodies": [
+            { id: "m_hd_pullover", name: "Pullover Hoodie", formality: 2, vibe: "Streetwear", layer: "Mid / Outer Layer" },
+            { id: "m_hd_zip", name: "Zip-up Hoodie", formality: 2, vibe: "Streetwear", layer: "Mid / Outer Layer" },
+            { id: "m_sw_crewneck", name: "Crewneck Sweatshirt", formality: 2, vibe: "Athletic / Street", layer: "Mid Layer" }
+          ],
+          "Tank Tops & Sleeveless": [
+            { id: "m_tk_gym", name: "Gym Muscle Tank Top", formality: 1, vibe: "Athletic", layer: "Inner / Base Layer" },
+            { id: "m_tk_under", name: "Undershirt (အတွင်းခံစွပ်ကျယ်)", formality: 1, vibe: "Loungewear", layer: "Inner / Base Layer" }
+          ]
+        },
+        bottoms: {
+          "Jeans (ဂျင်းဘောင်းဘီများ)": [
+            { id: "m_jn_skinny", name: "Skinny / Slim Fit Jeans", formality: 2, vibe: "Casual", layer: "Bottom" },
+            { id: "m_jn_straight", name: "Straight Leg Raw Denim", formality: 3, vibe: "Workwear / Americana", layer: "Bottom" },
+            { id: "m_jn_wide", name: "Wide-Leg / Baggy Jeans", formality: 2, vibe: "Streetwear", layer: "Bottom" },
+            { id: "m_jn_tapered", name: "Tapered Fit Denim", formality: 3, vibe: "Smart Casual", layer: "Bottom" }
+          ],
+          "Trousers & Pants": [
+            { id: "m_tr_chinos", name: "Chinos (ချီနိုဘောင်းဘီ)", formality: 3, vibe: "Smart Casual", layer: "Bottom" },
+            { id: "m_tr_dress", name: "Dress Pants / Slacks", formality: 4, vibe: "Business Casual", layer: "Bottom" },
+            { id: "m_tr_cargo", name: "Cargo Pants (အိတ်ကပ်ကြီးဘောင်းဘီ)", formality: 2, vibe: "Techwear / Streetwear", layer: "Bottom" },
+            { id: "m_tr_joggers", name: "Joggers / Sweatpants", formality: 1, vibe: "Athletic", layer: "Bottom" }
+          ],
+          "Shorts (ဘောင်းဘီတိုများ)": [
+            { id: "m_sh_chino", name: "Chino Shorts", formality: 2, vibe: "Casual Preppy", layer: "Bottom" },
+            { id: "m_sh_denim", name: "Denim Shorts", formality: 2, vibe: "Casual", layer: "Bottom" },
+            { id: "m_sh_cargo", name: "Cargo Shorts", formality: 1, vibe: "Outdoor / Casual", layer: "Bottom" },
+            { id: "m_sh_board", name: "Boardshorts / Swim Trunks", formality: 1, vibe: "Athletic", layer: "Bottom" }
+          ],
+          "Suits & Outerwear Bottoms": [
+            { id: "m_tr_tux", name: "Formal Tuxedo Trousers", formality: 5, vibe: "Formal / Black Tie", layer: "Bottom" }
+          ]
+        }
+      },
+      female: {
+        tops: {
+          "Blouses & Shirts": [
+            { id: "f_bl_button", name: "Button-up Silk Blouse", formality: 4, vibe: "Business Casual", layer: "Mid Layer" },
+            { id: "f_bl_peplum", name: "Peplum Top (ခါးသိမ်အောက်ကား)", formality: 3, vibe: "Chic Casual", layer: "Mid Layer" },
+            { id: "f_bl_wrap", name: "Wrap Top (ခါးပတ်ကြိုးချည်)", formality: 3, vibe: "Minimalist", layer: "Mid Layer" },
+            { id: "f_bl_tunic", name: "Tunic Shirt (ရှပ်ပွရှည်)", formality: 2, vibe: "Bohemian / Casual", layer: "Mid Layer" }
+          ],
+          "Casual & Crop Tops": [
+            { id: "f_cr_crop", name: "Casual Crop Top", formality: 2, vibe: "Streetwear", layer: "Inner / Base Layer" },
+            { id: "f_cr_cami", name: "Camisole / Cami (ကြိုးတစ်ချောင်း)", formality: 2, vibe: "Minimalist", layer: "Inner / Base Layer" },
+            { id: "f_cr_tube", name: "Tube Top / Bandeau", formality: 2, vibe: "Streetwear", layer: "Inner / Base Layer" },
+            { id: "f_cr_halter", name: "Halter Top", formality: 2, vibe: "Retro Casual", layer: "Inner / Base Layer" },
+            { id: "f_cr_off", name: "Off-Shoulder Top", formality: 3, vibe: "Chic", layer: "Mid Layer" },
+            { id: "f_cr_body", name: "Bodysuit (ကိုယ်ကျပ်)", formality: 2, vibe: "Modern Street", layer: "Inner / Base Layer" }
+          ]
+        },
+        bottoms: {
+          "Pants & Trousers": [
+            { id: "f_tr_high", name: "High-Waist Tailored Trousers", formality: 4, vibe: "Business Casual", layer: "Bottom" },
+            { id: "f_tr_palazzo", name: "Wide-Leg Palazzo Pants", formality: 3, vibe: "Chic Minimalist", layer: "Bottom" },
+            { id: "f_tr_culottes", name: "Culottes (ဘောင်းဘီပွတို)", formality: 3, vibe: "Smart Casual", layer: "Bottom" },
+            { id: "f_tr_cigarette", name: "Cigarette Pants", formality: 4, vibe: "Business Casual", layer: "Bottom" },
+            { id: "f_tr_leggings", name: "Leggings / Treggings", formality: 1, vibe: "Athletic", layer: "Bottom" },
+            { id: "f_tr_flare", name: "Flare / Bootcut Pants", formality: 3, vibe: "Retro 70s", layer: "Bottom" }
+          ],
+          "Jeans (အမျိုးသမီးဂျင်း)": [
+            { id: "f_jn_mom", name: "Mom Jeans (High-rise)", formality: 2, vibe: "Vintage / Casual", layer: "Bottom" },
+            { id: "f_jn_boy", name: "Boyfriend Relaxed Jeans", formality: 2, vibe: "Streetwear", layer: "Bottom" },
+            { id: "f_jn_skinny", name: "Stretch Skinny Jeans", formality: 2, vibe: "Casual", layer: "Bottom" }
+          ],
+          "Skirts (စကတ်များ)": [
+            { id: "f_sk_pencil", name: "Pencil Skirt (ခဲတံစကတ်)", formality: 4, vibe: "Business Casual", layer: "Bottom" },
+            { id: "f_sk_pleat", name: "Pleated Midi Skirt", formality: 3, vibe: "Preppy / Chic", layer: "Bottom" },
+            { id: "f_sk_aline", name: "A-Line Skirt", formality: 3, vibe: "Casual Feminine", layer: "Bottom" },
+            { id: "f_sk_mini", name: "Mini Skirt", formality: 2, vibe: "Streetwear / Y2K", layer: "Bottom" }
+          ]
+        }
+      }
+    };
 
+    const FOOTWEAR_DATA = {
+      "Sneakers / Trainers": [
+        { id: "sh_snk_mini", name: "Low-Top Minimalist Sneakers", formality: 3, vibe: "Minimalism / Smart Casual", conflicts: ["Formal Tuxedo Trousers", "Sweatpants / Joggers"] },
+        { id: "sh_snk_retro", name: "Retro / Chunky Runners", formality: 1, vibe: "Streetwear / Normcore", conflicts: ["Dress Pants / Slacks", "Formal Tuxedo Trousers", "High-Waist Tailored Trousers", "Pencil Skirt (ခဲတံစကတ်)"] },
+        { id: "sh_snk_skate", name: "Skate & Canvas Shoes", formality: 2, vibe: "Grunge / Streetwear", conflicts: ["Formal Tuxedo Trousers", "Dress Pants / Slacks"] },
+        { id: "sh_snk_high", name: "Basketball / High-Top Sneakers", formality: 2, vibe: "Streetwear / Sporty", conflicts: ["Formal Tuxedo Trousers", "Dress Pants / Slacks"] },
+        { id: "sh_snk_slip", name: "Slip-on Canvas Sneakers", formality: 2, vibe: "Casual", conflicts: ["Formal Tuxedo Trousers"] }
+      ],
+      "Loafers & Slip-Ons": [
+        { id: "sh_lf_penny", name: "Penny Loafers", formality: 4, vibe: "Old Money / Sartorial", conflicts: ["Cargo Pants (အိတ်ကပ်ကြီးဘောင်းဘီ)", "Joggers / Sweatpants", "Boardshorts / Swim Trunks"] },
+        { id: "sh_lf_tassel", name: "Tassel Loafers", formality: 4, vibe: "Business Casual", conflicts: ["Cargo Pants (အိတ်ကပ်ကြီးဘောင်းဘီ)", "Joggers / Sweatpants"] },
+        { id: "sh_lf_horse", name: "Horsebit / Bit Loafers", formality: 4, vibe: "Luxury / Smart Casual", conflicts: ["Joggers / Sweatpants"] },
+        { id: "sh_lf_boat", name: "Boat Shoes / Deck Shoes", formality: 2, vibe: "Preppy / Vacation", conflicts: ["Formal Tuxedo Trousers", "Dress Pants / Slacks"] },
+        { id: "sh_lf_mules", name: "Leather / Suede Mules", formality: 3, vibe: "Minimalist Chic", conflicts: ["Joggers / Sweatpants"] }
+      ],
+      "Dress Shoes (ရှူးဖိနပ်များ)": [
+        { id: "sh_dr_oxford", name: "Oxford Shoes (Closed Lacing)", formality: 5, vibe: "Formal / Black Tie", conflicts: ["Wide-Leg / Baggy Jeans", "Cargo Pants (အိတ်ကပ်ကြီးဘောင်းဘီ)", "Joggers / Sweatpants", "Chino Shorts", "Boyfriend Relaxed Jeans"] },
+        { id: "sh_dr_derby", name: "Derby / Blucher Shoes", formality: 4, vibe: "Smart Casual / Workwear", conflicts: ["Joggers / Sweatpants", "Boardshorts / Swim Trunks"] },
+        { id: "sh_dr_monk", name: "Monk Strap Shoes", formality: 4, vibe: "Modern Formal", conflicts: ["Cargo Pants (အိတ်ကပ်ကြီးဘောင်းဘီ)", "Joggers / Sweatpants"] },
+        { id: "sh_dr_brogue", name: "Brogues / Wingtips", formality: 4, vibe: "Heritage Tailored", conflicts: ["Joggers / Sweatpants", "Boardshorts / Swim Trunks"] }
+      ],
+      "Boots (ဘွတ်ဖိနပ်များ)": [
+        { id: "sh_bt_chelsea", name: "Chelsea Boots", formality: 3, vibe: "Sleek / Minimalist", conflicts: ["Joggers / Sweatpants", "Chino Shorts"] },
+        { id: "sh_bt_chukka", name: "Chukka / Desert Boots", formality: 3, vibe: "Americana / Casual", conflicts: ["Formal Tuxedo Trousers"] },
+        { id: "sh_bt_combat", name: "Combat & Workwear Boots", formality: 2, vibe: "Grunge / Punk", conflicts: ["Formal Tuxedo Trousers", "Dress Pants / Slacks"] },
+        { id: "sh_bt_knee", name: "Knee-High Leather Boots", formality: 3, vibe: "High Fashion", conflicts: ["Wide-Leg / Baggy Jeans", "Boardshorts / Swim Trunks"] }
+      ],
+      "Heels & Flats (အမျိုးသမီး)": [
+        { id: "sh_hl_stiletto", name: "Stilettos / Classic Pumps", formality: 5, vibe: "Evening / Corporate", conflicts: ["Joggers / Sweatpants", "Cargo Pants (အိတ်ကပ်ကြီးဘောင်းဘီ)"] },
+        { id: "sh_hl_block", name: "Block / Chunky Heels", formality: 3, vibe: "Smart Casual Work", conflicts: ["Joggers / Sweatpants"] },
+        { id: "sh_fl_ballet", name: "Ballet Flats", formality: 3, vibe: "Feminine Chic", conflicts: ["Joggers / Sweatpants", "Cargo Pants (အိတ်ကပ်ကြီးဘောင်းဘီ)"] }
+      ],
+      "Sandals, Slides & Clogs": [
+        { id: "sh_clog_foam", name: "Clogs / Mules (Foam & Suede)", formality: 1, vibe: "Cozy / Lounge Casual", conflicts: ["Dress Pants / Slacks", "Formal Tuxedo Trousers", "High-Waist Tailored Trousers", "Pencil Skirt (ခဲတံစကတ်)"] },
+        { id: "sh_sd_slide", name: "Slides / Sliders", formality: 1, vibe: "Athletic / Pool", conflicts: ["Dress Pants / Slacks", "Formal Tuxedo Trousers", "Chinos (ချီနိုဘောင်းဘီ)"] },
+        { id: "sh_sd_leather", name: "Leather Two-Strap Sandals", formality: 2, vibe: "Summer Streetwear", conflicts: ["Formal Tuxedo Trousers", "Dress Pants / Slacks"] }
+      ]
+    };
+
+    const FORMALITY_NAMES = {
+      1: "Loungewear / Athletic",
+      2: "Casual / Streetwear",
+      3: "Smart Casual",
+      4: "Business Casual",
+      5: "Formal / Black Tie"
+    };
+
+    const SKIN_COLORS = ["#f7d0b3", "#e0ab8b", "#c68642", "#8d5524", "#493223", "#cccccc"];
+    const FABRIC_PALETTES = [
+      { name: "White", hex: "#f8fafc" },
+      { name: "Black", hex: "#18181b" },
+      { name: "Slate Grey", hex: "#64748b" },
+      { name: "Navy Blue", hex: "#1e3a8a" },
+      { name: "Olive Earth", hex: "#3f4f34" },
+      { name: "Tan Khaki", hex: "#b89778" },
+      { name: "Crimson Red", hex: "#991b1b" }
+    ];
+
+    // --- ၂။ State Variables ---
     let gender = "male";
-    let measurements = { height: 175, shoulder: 46, chest: 96, waist: 78, legLength: 102 };
-    let curTop = TOPS[0];
-    let curBottom = BOTTOMS[2];
-    let curShoes = SHOES[1];
+    let unit = "cm"; // 'cm' or 'in'
+    let skinColor = SKIN_COLORS[1];
+    let topColor = FABRIC_PALETTES[1].hex;
+    let bottomColor = FABRIC_PALETTES[3].hex;
 
+    let measurements = {
+      height: 175,
+      shoulder: 46,
+      chest: 96,
+      waist: 78,
+      armLength: 62,
+      legLength: 102
+    };
+
+    let curTop = APPAREL_DATA.male.tops["T-Shirts (တီရှပ်များ)"][0];
+    let curBottom = APPAREL_DATA.male.bottoms["Trousers & Pants"][0];
+    let curShoes = FOOTWEAR_DATA["Sneakers / Trainers"][0];
+    let wardrobe = [];
+
+    // --- ၃။ 3D Engine Setup & Procedural Draped Model ---
     const container = document.getElementById("canvas-container");
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color("#090d16");
+    scene.background = new THREE.Color("#070a12");
 
     const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 100);
-    camera.position.set(0, 1.2, 4.5);
+    camera.position.set(0, 1.25, 4.2);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
     renderer.setSize(container.clientWidth, container.clientHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
     container.appendChild(renderer.domElement);
 
     const controls = new THREE.OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
+    controls.minDistance = 2;
+    controls.maxDistance = 7;
+    controls.maxPolarAngle = Math.PI / 2;
 
-    scene.add(new THREE.HemisphereLight(0xffffff, 0x334155, 0.8));
-    const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
-    dirLight.position.set(5, 10, 5);
-    scene.add(dirLight);
+    scene.add(new THREE.HemisphereLight(0xffffff, 0x1e293b, 0.85));
+    const mainLight = new THREE.DirectionalLight(0xffffff, 1.0);
+    mainLight.position.set(5, 12, 6);
+    scene.add(mainLight);
 
-    const group = new THREE.Group();
-    scene.add(group);
+    const backLight = new THREE.DirectionalLight(0x6366f1, 0.4);
+    backLight.position.set(-5, 4, -4);
+    scene.add(backLight);
 
-    const skinMat = new THREE.MeshStandardMaterial({ color: SKIN_COLORS[1], roughness: 0.6 });
-    const clothMat = new THREE.MeshStandardMaterial({ color: "#334155", roughness: 0.8 });
-    const pantsMat = new THREE.MeshStandardMaterial({ color: "#1e293b", roughness: 0.7 });
+    const modelGroup = new THREE.Group();
+    scene.add(modelGroup);
 
-    const head = new THREE.Mesh(new THREE.SphereGeometry(0.16, 24, 24), skinMat);
-    head.position.y = 2.2; group.add(head);
+    // Materials
+    const skinMat = new THREE.MeshStandardMaterial({ color: skinColor, roughness: 0.6 });
+    const topMat = new THREE.MeshStandardMaterial({ color: topColor, roughness: 0.8 });
+    const bottomMat = new THREE.MeshStandardMaterial({ color: bottomColor, roughness: 0.7 });
+    const shoeMat = new THREE.MeshStandardMaterial({ color: "#111827", roughness: 0.5 });
 
-    const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.2, 0.7, 20), clothMat);
-    torso.position.y = 1.65; group.add(torso);
+    // Procedural Humanoid Mesh Nodes
+    const headMesh = new THREE.Mesh(new THREE.SphereGeometry(0.15, 32, 32), skinMat);
+    headMesh.position.y = 2.25;
+    modelGroup.add(headMesh);
 
-    const hips = new THREE.Mesh(new THREE.SphereGeometry(0.23, 20, 20), pantsMat);
-    hips.position.y = 1.25; group.add(hips);
+    // Draped Top (Torso & Chest)
+    const torsoMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.21, 0.42, 28), topMat);
+    torsoMesh.position.y = 1.82;
+    modelGroup.add(torsoMesh);
 
-    const legL = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.06, 1.1, 16), pantsMat);
-    const legR = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.06, 1.1, 16), pantsMat);
-    group.add(legL); group.add(legR);
+    // Midsection / Waist
+    const waistMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.21, 0.23, 0.3, 28), topMat);
+    waistMesh.position.y = 1.5;
+    modelGroup.add(waistMesh);
 
-    function updateShape() {
-      const s = measurements.shoulder / 46;
-      const c = measurements.chest / 96;
-      const w = measurements.waist / 78;
-      const legS = measurements.legLength / 102;
-      const h = measurements.height / 175;
+    // Draped Bottom (Hips & Pelvis)
+    const pelvisMesh = new THREE.Mesh(new THREE.SphereGeometry(0.24, 28, 28), bottomMat);
+    pelvisMesh.position.y = 1.25;
+    modelGroup.add(pelvisMesh);
 
-      group.scale.set(h, h, h);
-      group.position.y = -1.1;
+    // Arms & Sleeves
+    const armL = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.05, 0.55, 20), skinMat);
+    const armR = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.05, 0.55, 20), skinMat);
+    const sleeveL = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.075, 0.22, 20), topMat);
+    const sleeveR = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.075, 0.22, 20), topMat);
+    modelGroup.add(armL); modelGroup.add(armR);
+    modelGroup.add(sleeveL); modelGroup.add(sleeveR);
 
-      torso.scale.set(s, 1, c);
-      hips.scale.set(w, 1, 1);
+    // Legs & Pants
+    const legL = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.065, 1.15, 24), bottomMat);
+    const legR = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.065, 1.15, 24), bottomMat);
+    modelGroup.add(legL); modelGroup.add(legR);
 
-      legL.position.set(-0.15, 1.2 - 0.55 * legS, 0);
-      legL.scale.set(1, legS, 1);
-      legR.position.set(0.15, 1.2 - 0.55 * legS, 0);
-      legR.scale.set(1, legS, 1);
+    // Footwear Meshes
+    const shoeL = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.09, 0.27), shoeMat);
+    const shoeR = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.09, 0.27), shoeMat);
+    modelGroup.add(shoeL); modelGroup.add(shoeR);
+
+    // GLTF Custom Loader (Attempts to load .glb if uploaded to repo root)
+    let gltfModel = null;
+    const gltfLoader = new THREE.GLTFLoader();
+    function tryLoadGLB() {
+      const fileName = gender === "male" ? "male_base_model.glb" : "womenfemale_body_base_rigged.glb";
+      gltfLoader.load(
+        fileName,
+        (gltf) => {
+          if (gltfModel) scene.remove(gltfModel);
+          gltfModel = gltf.scene;
+          gltfModel.scale.set(1, 1, 1);
+          gltfModel.position.set(0, -1.2, 0);
+          scene.add(gltfModel);
+          modelGroup.visible = false; // Hide procedural model if GLB exists
+        },
+        undefined,
+        () => {
+          // Fallback to procedural model if GLB not uploaded yet
+          if (gltfModel) { scene.remove(gltfModel); gltfModel = null; }
+          modelGroup.visible = true;
+        }
+      );
     }
 
-    function validate() {
-      const issues = [];
-      if (Math.abs(curTop.formality - curBottom.formality) > 1) {
-        issues.push(`Formality Gap: ${curTop.name} (Lvl ${curTop.formality}) နှင့် ${curBottom.name} (Lvl ${curBottom.formality}) မကိုက်ညီပါ။`);
-      }
-      if (curShoes.conflicts.includes(curBottom.name)) {
-        issues.push(`Conflict: ${curShoes.name} သည် ${curBottom.name} နှင့် မသင့်တော်ပါ။`);
-      }
+    // Dynamic 3D Rig Scaling Engine
+    function update3DShape() {
+      const sWidth = measurements.shoulder / 46;
+      const cWidth = measurements.chest / 96;
+      const wWidth = measurements.waist / 78;
+      const legScale = measurements.legLength / 102;
+      const armScale = measurements.armLength / 62;
+      const hScale = measurements.height / 175;
 
-      const box = document.getElementById("status-container");
-      if (issues.length === 0) {
-        box.innerHTML = `<div class="bg-emerald-950/80 border border-emerald-500/50 p-2.5 rounded text-emerald-200 text-xs">✅ Styling Harmony Passed</div>`;
-      } else {
-        box.innerHTML = `<div class="bg-rose-950/90 border border-rose-500/50 p-2.5 rounded text-rose-200 text-xs font-medium space-y-1">
-          <div class="font-bold">⚠️ Style Conflict</div>${issues.map(e => `<div>• ${e}</div>`).join("")}
-        </div>`;
-      }
+      const isFem = gender === "female";
+      const hipFactor = isFem ? 1.22 : 0.96;
+
+      modelGroup.scale.set(hScale, hScale, hScale);
+      modelGroup.position.y = -1.22;
+
+      torsoMesh.scale.set(sWidth * (isFem ? 0.9 : 1.1), 1, cWidth);
+      waistMesh.scale.set(wWidth, 1, wWidth * 0.9);
+      pelvisMesh.scale.set(wWidth * hipFactor, 1, 1);
+
+      // Arms & Sleeves
+      const armDist = 0.33 * sWidth;
+      armL.position.set(-armDist, 1.68 - (0.15 * armScale), 0);
+      armL.scale.set(1, armScale, 1);
+      armR.position.set(armDist, 1.68 - (0.15 * armScale), 0);
+      armR.scale.set(1, armScale, 1);
+
+      sleeveL.position.set(-armDist, 1.82, 0);
+      sleeveR.position.set(armDist, 1.82, 0);
+
+      // Legs & Shoes
+      const legDist = 0.145 * hipFactor;
+      legL.position.set(-legDist, 1.15 - (0.58 * legScale), 0);
+      legL.scale.set(wWidth * 0.5, legScale, wWidth * 0.5);
+
+      rightPos = legDist;
+      legR.position.set(legDist, 1.15 - (0.58 * legScale), 0);
+      legR.scale.set(wWidth * 0.5, legScale, wWidth * 0.5);
+
+      shoeL.position.set(-legDist, 1.15 - (1.16 * legScale), 0.05);
+      shoeR.position.set(legDist, 1.15 - (1.16 * legScale), 0.05);
     }
 
-    // Controls
-    ["height", "shoulder", "chest", "waist", "leg"].forEach(k => {
-      const el = document.getElementById(`slider-${k}`);
-      el.addEventListener("input", (e) => {
-        const v = Number(e.target.value);
-        document.getElementById(`val-${k}`).innerText = `${v} cm`;
-        if (k === "leg") measurements.legLength = v;
-        else measurements[k] = v;
-        updateShape();
+    // --- ၄။ Unit Conversion Logic (cm <-> in) ---
+    function cmToIn(val) { return (val / 2.54).toFixed(1); }
+    function inToCm(val) { return Math.round(val * 2.54); }
+
+    function updateSliderDisplays() {
+      const keys = ["height", "shoulder", "chest", "waist", "arm", "leg"];
+      keys.forEach(k => {
+        const val = k === "arm" ? measurements.armLength : (k === "leg" ? measurements.legLength : measurements[k]);
+        const display = document.getElementById(`val-${k}`);
+        if (unit === "cm") {
+          display.innerText = `${val} cm`;
+        } else {
+          display.innerText = `${cmToIn(val)} in`;
+        }
       });
-    });
+      document.getElementById("unit-indicator").innerText = unit === "cm" ? "Metric (cm)" : "Imperial (inches)";
+    }
 
-    const skinBox = document.getElementById("skin-palettes");
-    SKIN_COLORS.forEach(c => {
-      const b = document.createElement("button");
-      b.style.backgroundColor = c;
-      b.className = "w-5 h-5 rounded-full border border-slate-700";
-      b.addEventListener("click", () => skinMat.color.set(c));
-      skinBox.appendChild(b);
-    });
+    // --- ၅။ Validation & Style Rules Engine ---
+    function validateOutfitRules() {
+      const issues = [];
+      const formalityGap = Math.abs(curTop.formality - curBottom.formality);
 
-    const selT = document.getElementById("select-top");
-    TOPS.forEach(t => { const o = document.createElement("option"); o.value = t.id; o.innerText = t.name; selT.appendChild(o); });
-    selT.addEventListener("change", (e) => { curTop = TOPS.find(t => t.id === e.target.value); validate(); });
+      if (formalityGap > 1) {
+        issues.push(`Formality Gap ကြီးလွန်းပါသည် (${curTop.name}: Lvl ${curTop.formality} vs ${curBottom.name}: Lvl ${curBottom.formality})။ အများဆုံး ±1 သာ တွဲခွင့်ပြုသည်။`);
+      }
 
-    const selB = document.getElementById("select-bottom");
-    BOTTOMS.forEach(b => { const o = document.createElement("option"); o.value = b.id; o.innerText = b.name; if(b.id === "b3") o.selected = true; selB.appendChild(o); });
-    selB.addEventListener("change", (e) => { curBottom = BOTTOMS.find(b => b.id === e.target.value); validate(); });
+      const shoeFormalityGap = Math.abs(curBottom.formality - curShoes.formality);
+      if (shoeFormalityGap > 1) {
+        issues.push(`ဘောင်းဘီနှင့် ဖိနပ် Formality ကွာဟနေပါသည် (${curBottom.name}: Lvl ${curBottom.formality} vs ${curShoes.name}: Lvl ${curShoes.formality})။`);
+      }
 
-    const selS = document.getElementById("select-shoes");
-    SHOES.forEach(s => { const o = document.createElement("option"); o.value = s.id; o.innerText = s.name; if(s.id === "s2") o.selected = true; selS.appendChild(o); });
-    selS.addEventListener("change", (e) => { curShoes = SHOES.find(s => s.id === e.target.value); validate(); });
+      if (curShoes.conflicts && curShoes.conflicts.includes(curBottom.name)) {
+        issues.push(`Style Conflict: ${curShoes.name} သည် ${curBottom.name} နှင့် တွဲဖက်ရန် လုံးဝ မသင့်တော်ပါ။`);
+      }
 
-    document.getElementById("btn-export").addEventListener("click", () => {
-      renderer.render(scene, camera);
-      const a = document.createElement("a");
-      a.download = `Lookbook_${Date.now()}.png`;
-      a.href = renderer.domElement.toDataURL("image/png");
-      a.click();
-    });
+      const statusBox = document.getElementById("status-container");
+      if (issues.length === 0) {
+        statusBox.innerHTML = `
+          <div class="bg-emerald-950/80 border border-emerald-500/50 backdrop-blur-md p-3 rounded-xl flex items-center gap-3 text-emerald-200 text-xs shadow-xl">
+            <span class="text-base">✅</span>
+            <div>
+              <div class="font-bold">Styling Harmony: Passed</div>
+              <div class="text-emerald-300/80">Formality Level နှင့် ဖိနပ် တွဲဖက်မှု အားလုံး စည်းမျဉ်း ကိုက်ညီပါသည်။</div>
+            </div>
+          </div>`;
+      } else {
+        statusBox.innerHTML = `
+          <div class="bg-rose-950/90 border border-rose-500/50 backdrop-blur-md p-3 rounded-xl flex items-start gap-2.5 text-rose-200 text-xs shadow-xl">
+            <span class="text-base mt-0.5">⚠️</span>
+            <div class="space-y-1">
+              <div class="font-bold text-rose-300">Style Conflict Warning!</div>
+              ${issues.map(msg => `<div>• ${msg}</div>`).join("")}
+            </div>
+          </div>`;
+      }
 
-    window.addEventListener("resize", () => {
-      camera.aspect = container.clientWidth / container.clientHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(container.clientWidth, container.clientHeight);
-    });
+      // Update Right Sidebar Specs
+      document.getElementById("badge-layer").innerText = curTop.layer || "Inner / Base Layer";
+      document.getElementById("badge-formality-num").innerText = `Level ${curTop.formality}`;
+      document.getElementById("badge-formality-name").innerText = FORMALITY_NAMES[curTop.formality];
+      document.getElementById("badge-vibe").innerText = curTop.vibe;
+    }
 
-    function loop() {
-      requestAnimationFrame(loop);
+    // --- ၆။ UI Populate & Nested Dropdown Selectors ---
+    function populateDropdowns() {
+      const gData = APPAREL_DATA[gender];
+      
+      // Top Main Categories
+      const selTopMain = document.getElementById("sel-top-main");
+      selTopMain.innerHTML = "";
+      Object.keys(gData.tops).forEach(cat => {
+        const opt = document.createElement("option");
+        opt.value = cat; opt.innerText = cat;
+        selTopMain.appendChild(opt);
+      });
+
+      function updateTopSubs() {
+        const selTopSub = document.getElementById("sel-top-sub");
+        selTopSub.innerHTML = "";
+        const cat = selTopMain.value;
+        gData.tops[cat].forEach(item => {
+          const opt = document.createElement("option");
+          opt.value = item.id; opt.innerText = item.name;
+          selTopSub.appendChild(opt);
+        });
+        curTop = gData.tops[cat][0];
+        validateOutfitRules();
+      }
+      selTopMain.onchange = updateTopSubs;
+      updateTopSubs();
+
+      document.getElementById("sel-top-sub").onchange = (e) => {
+        const cat = selTopMain.value;
+        curTop = gData.tops[cat].find(i => i.id === e.target.value);
+        validateOutfitRules();
+      };
+
+      // Bottom Main Categories
+      const selBottomMain = document.getElementById("sel-bottom-main");
+      selBottomMain.innerHTML = "";
+      Object.keys(gData.bottoms).forEach(cat => {
+        const opt = document.createElement("option");
+        opt.value = cat; opt.innerText = cat;
+        selBottomMain.appendChild(opt);
+      });
+
+      function updateBottomSubs() {
+        const selBottomSub = document.getElementById("sel-bottom-sub");
+        selBottomSub.innerHTML = "";
+        const cat = selBottomMain.value;
+        gData.bottoms[cat].forEach(item => {
+          const opt = document.createElement("option");
+          opt.value = item.id; opt.innerText = item.name;
+          selBottomSub.appendChild(opt);
+        });
+        curBottom = gData.bottoms[cat][0];
+        validateOutfitRules();
+      }
+      selBottomMain.onchange = updateBottomSubs;
+      updateBottomSubs();
+
+      document.getElementById("sel-bottom-sub").onchange = (e) => {
+        const cat = selBottomMain.value;
+        curBottom = gData.bottoms[cat].find(i => i.id === e.target.value);
+        validateOutfitRules();
+      };
+
+      // Footwear Categories
+      const selShoeMain = document.getElementById("sel-shoe-main");
+      selShoeMain.innerHTML = "";
+      Object.keys(FOOTWEAR_DATA).forEach(cat => {
+        const opt = document.createElement("option");
+        opt.value = cat; opt.innerText = cat;
+        selShoeMain.appendChild(opt);
+      });
+
+      function updateShoeSubs() {
+        const selShoeSub = document.getElementById("sel-shoe-sub");
+        selShoeSub.innerHTML = "";
+        const cat = selShoeMain.value;
+        FOOTWEAR_DATA[cat].forEach(item => {
+          const opt = document.createElement("option");
+          opt.value = item.id; opt.innerText = item.name;
+          selShoeSub.appendChild(opt);
+        });
+        curShoes = FOOTWEAR_DATA[cat][0];
+        validateOutfitRules();
+      }
+      selShoeMain.onchange = updateShoeSubs;
+      updateShoeSubs();
+
+      document.getElementById("sel-shoe-sub").onchange = (e) => {
+        const cat = selShoeMain.value;
+        curShoes = FOOTWEAR_DATA[cat].find(i => i.id === e.target.value);
+        validateOutfitRules();
+      };
+    }
+
+    // --- ၇။ Daily Outfit Generator (အချက် ၁၄) ---
+    function generateDailyOutfit() {
+      const gData = APPAREL_DATA[gender];
+      const topCats = Object.keys(gData.tops);
+      const randTopCat = topCats[Math.floor(Math.random() * topCats.length)];
+      const randTop = gData.tops[randTopCat][Math.floor(Math.random() * gData.tops[randTopCat].length)];
+
+      const bottomCats = Object.keys(gData.bottoms);
+      let validPairs = [];
+
+      // Find compatible bottoms with formality difference <= 1
+      bottomCats.forEach(bCat => {
+        gData.bottoms[bCat].forEach(bItem => {
+          if (Math.abs(randTop.formality - bItem.formality) <= 1) {
+            validPairs.push({ cat: bCat, item: bItem });
+          }
+        });
+      });
+
+      if (validPairs.length === 0) return;
+      const chosenBottom = validPairs[Math.floor(Math.random() * validPairs.length)];
+
+      // Find compatible shoes
+      let validShoes = [];
+      Object.keys(FOOTWEAR_DATA).forEach(sCat => {
+        FOOTWEAR_DATA[sCat].forEach(sItem => {
+          if (Math.abs(chosenBottom.item.formality - sItem.formality) <= 1 &&
+              (!sItem.conflicts || !sItem.conflicts.includes(chosenBottom.item.name))) {
+            validShoes.push({ cat: sCat, item: sItem });
+          }
+        });
+      });
+
+      const chosenShoe = validShoes.length > 0 ? validShoes[Math.floor(Math.random() * validShoes.length)] : null;
+
+      // Update UI Selectors
+      document.getElementById("sel-top-main").value = randTopCat;
+      const selTopSub = document.getElementById("sel-top-sub");
+      selTopSub.innerHTML = "";
+      gData.tops[randTopCat].forEach(i => {
+        const o = document.createElement("option"); o.value = i.id; o.innerText = i.name; selTopSub.appendChild(o);
+      });
+      selTopSub.value = randTop.id;
+      curTop = randTop;
+
+      document.getElementById("sel-bottom-main").value = chosenBottom.cat;
+      const selBottomSub = document.getElementById("sel-bottom-sub");
+      selBottomSub.innerHTML = "";
+      gData.bottoms[chosenBottom.cat].forEach(i => {
+        const o = document.createElement("option"); o.value = i.id; o.innerText = i.name; selBottomSub.appendChild(o);
+      });
+      selBottomSub.value = chosenBottom.item.id;
+      curBottom = chosenBottom.item;
+
+      if (chosenShoe) {
+        document.getElementById("sel-shoe-main").value = chosenShoe.cat;
+        const selShoeSub = document.getElementById("sel-shoe-sub");
+        selShoeSub.innerHTML = "";
+        FOOTWEAR_DATA[chosenShoe.cat].forEach(i => {
+          const o = document.createElement("option"); o.value = i.id; o.innerText = i.name; selShoeSub.appendChild(o);
+        });
+        selShoeSub.value = chosenShoe.item.id;
+        curShoes = chosenShoe.item;
+      }
+
+      // Randomize Colors
+      const randTopColor = FABRIC_PALETTES[Math.floor(Math.random() * FABRIC_PALETTES.length)].hex;
+      const randBotColor = FABRIC_PALETTES[Math.floor(Math.random() * FABRIC_PALETTES.length)].hex;
+      topMat.color.set(randTopColor);
+      bottomMat.color.set(randBotColor);
+
+      validateOutfitRules();
+    }
+
+    // --- ၈။ Digital Wardrobe Management (အချက် ၁၃) ---
+    function addToWardrobe() {
+      const item = {
+        id: Date.now(),
+        date: new Date().toLocaleDateString(),
+        top: curTop.name,
+        bottom: curBottom.name,
+        shoe: curShoes.name,
+        vibe: curTop.vibe,
+        fiber: document.getElementById("tech-fiber").value.split(" (")[0],
+        gsm: document.getElementById("val-gsm").innerText
+      };
+      wardrobe.push(item);
+      document.getElementById("wardrobe-count").innerText = wardrobe.length;
+      renderWardrobeList();
+    }
+
+    function renderWardrobeList() {
+      const list = document.getElementById("wardrobe-list");
+      list.innerHTML = "";
+      if (wardrobe.length === 0) {
+        list.innerHTML = `<div class="text-xs text-slate-500 text-center py-6">ဗီဒိုထဲတွင် ဝတ်စုံ မရှိသေးပါ။</div>`;
+        return;
+      }
+      wardrobe.forEach((w) => {
+        const card = document.createElement("div");
+        card.className = "bg-slate-950 p-3 rounded-xl border border-slate-800 text-xs space-y-1 relative";
+        card.innerHTML = `
+          <div class="flex justify-between items-center text-indigo-400 font-bold">
+            <span>${w.vibe} Look</span>
+            <span class="text-[10px] text-slate-500">${w.date}</span>
+          </div>
+          <div class="text-slate-200 font-medium">• Top: ${w.top} (${w.fiber}, ${w.gsm})</div>
+          <div class="text-slate-300">• Bottom: ${w.bottom}</div>
+          <div class="text-slate-400">• Shoes: ${w.shoe}</div>
+          <button onclick="deleteWardrobeItem(${w.id})" class="text-rose-400 text-[10px] hover:underline pt-1 block">Remove Item</button>
+        `;
+        list.appendChild(card);
+      });
+    }
+
+    window.deleteWardrobeItem = function(id) {
+      wardrobe = wardrobe.filter(w => w.id !== id);
+      document.getElementById("wardrobe-count").innerText = wardrobe.length;
+      renderWardrobeList();
+    };
+
+    // --- ၉။ Event Listeners & Controls Initialization ---
+    function initListeners() {
+      // Gender Toggles
+      const btnMale = document.getElementById("btn-male");
+      const btnFemale = document.getElementById("btn-female");
+      btnMale.onclick = () => {
+        gender = "male";
+        btnMale.className = "flex-1 py-1 text-xs font-semibold rounded bg-indigo-600 text-white transition";
+        btnFemale.className = "flex-1 py-1 text-xs font-semibold rounded text-slate-400 hover:text-white transition";
+        populateDropdowns();
+        tryLoadGLB();
+        update3DShape();
+      };
+      btnFemale.onclick = () => {
+        gender = "female";
+        btnFemale.className = "flex-1 py-1 text-xs font-semibold rounded bg-indigo-600 text-white transition";
+        btnMale.className = "flex-1 py-1 text-xs font-semibold rounded text-slate-400 hover:text-white transition";
+        populateDropdowns();
+        tryLoadGLB();
+        update3DShape();
+      };
+
+      // Measurement Unit Toggles
+      const btnCm = document.getElementById("btn-unit-cm");
+      const btnIn = document.getElementById("btn-unit-in");
+      btnCm.onclick = () => {
+        unit = "cm";
+        btnCm.className = "flex-1 py-1 text-xs font-semibold rounded bg-slate-800 text-white transition";
+        btnIn.className = "flex-1 py-1 text-xs font-semibold rounded text-slate-400 hover:text-white transition";
+        updateSliderDisplays();
+      };
+      btnIn.onclick = () => {
+        unit = "in";
+        btnIn.className = "flex-1 py-1 text-xs font-semibold rounded bg-slate-800 text-white transition";
+        btnCm.className = "flex-1 py-1 text-xs font-semibold rounded text-slate-400 hover:text-white transition";
+        updateSliderDisplays();
+      };
+
+      // Sliders Binding
+      const sMap = [
+        { id: "slider-height", key: "height" },
+        { id: "slider-shoulder", key: "shoulder" },
+        { id: "slider-chest", key: "chest" },
+        { id: "slider-waist", key: "waist" },
+        { id: "slider-arm", key: "armLength" },
+        { id: "slider-leg", key: "legLength" }
+      ];
+      sMap.forEach(item => {
+        document.getElementById(item.id).addEventListener("input", (e) => {
+          measurements[item.key] = Number(e.target.value);
+          updateSliderDisplays();
+          update3DShape();
+        });
+      });
+
+      // Skin Palettes
+      const skinBox = document.getElementById("skin-palettes");
+      SKIN_COLORS.forEach(c => {
+        const b = document.createElement("button");
+        b.style.backgroundColor = c;
+        b.className = "w-6 h-6 rounded-full border border-slate-700 hover:scale-110 transition";
+        b.onclick = () => { skinMat.color.set(c); };
+        skinBox.appendChild(b);
+      });
+
+      // Fabric Palettes
+      const topColorBox = document.getElementById("top-colors");
+      const botColorBox = document.getElementById("bottom-colors");
+      FABRIC_PALETTES.forEach(f => {
+        const bt = document.createElement("button");
+        bt.style.backgroundColor = f.hex;
+        bt.className = "w-5 h-5 rounded-full border border-slate-700 hover:scale-110 transition";
+        bt.title = f.name;
+        bt.onclick = () => { topMat.color.set(f.hex); };
+        topColorBox.appendChild(bt);
+
+        const bb = document.createElement("button");
+        bb.style.backgroundColor = f.hex;
+        bb.className = "w-5 h-5 rounded-full border border-slate-700 hover:scale-110 transition";
+        bb.title = f.name;
+        bb.onclick = () => { bottomMat.color.set(f.hex); };
+        botColorBox.appendChild(bb);
+      });
+
+      // GSM Slider
+      document.getElementById("slider-gsm").oninput = (e) => {
+        document.getElementById("val-gsm").innerText = `${e.target.value} GSM`;
+        // High GSM increases rigidity/roughness slightly
+        topMat.roughness = 0.6 + (e.target.value / 1000);
+      };
+
+      // Outfit Generator & Wardrobe Modal
+      document.getElementById("btn-outfit-generator").onclick = generateDailyOutfit;
+      document.getElementById("btn-add-wardrobe").onclick = addToWardrobe;
+
+      const wModal = document.getElementById("wardrobe-modal");
+      document.getElementById("btn-view-wardrobe").onclick = () => wModal.classList.remove("hidden");
+      document.getElementById("btn-close-wardrobe").onclick = () => wModal.classList.add("hidden");
+
+      // Export Image Lookbook
+      document.getElementById("btn-export").onclick = () => {
+        renderer.render(scene, camera);
+        const a = document.createElement("a");
+        a.download = `3D_Style_Lookbook_${Date.now()}.png`;
+        a.href = renderer.domElement.toDataURL("image/png");
+        a.click();
+      };
+
+      window.addEventListener("resize", () => {
+        camera.aspect = container.clientWidth / container.clientHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(container.clientWidth, container.clientHeight);
+      });
+    }
+
+    // Animation Render Loop
+    function animate() {
+      requestAnimationFrame(animate);
       controls.update();
       renderer.render(scene, camera);
     }
 
-    updateShape();
-    validate();
-    loop();
+    // Boot
+    populateDropdowns();
+    initListeners();
+    updateSliderDisplays();
+    update3DShape();
+    tryLoadGLB();
+    animate();
   </script>
 </body>
 </html>
