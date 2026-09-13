@@ -1,1 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>3D Digital Fashion Studio</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <style>
+    body { margin: 0; overflow: hidden; background-color: #090d16; }
+    input[type=range] { accent-color: #6366f1; }
+  </style>
+</head>
+<body class="text-slate-100 font-sans flex h-screen w-screen select-none">
 
+  <!-- Left Sidebar -->
+  <div class="w-80 bg-slate-900 border-r border-slate-800 p-5 flex flex-col justify-between overflow-y-auto z-10">
+    <div class="space-y-4">
+      <div>
+        <h1 class="text-lg font-bold text-white flex items-center gap-2">👔 FASHION STUDIO 3D</h1>
+        <p class="text-xs text-slate-400">Parametric Fit & Style Engine</p>
+      </div>
+
+      <div class="flex bg-slate-950 p-1 rounded-lg border border-slate-800">
+        <button id="btn-male" class="flex-1 py-1 text-xs font-semibold rounded bg-indigo-600 text-white">Male</button>
+        <button id="btn-female" class="flex-1 py-1 text-xs font-semibold rounded text-slate-400">Female</button>
+      </div>
+
+      <div>
+        <label class="text-xs font-medium text-slate-400 mb-1 block">Skin Tone</label>
+        <div class="flex gap-2" id="skin-palettes"></div>
+      </div>
+
+      <div class="space-y-3">
+        <div class="text-xs font-semibold text-slate-300 uppercase">Body Scale (cm)</div>
+        <div>
+          <div class="flex justify-between text-xs mb-1">
+            <span class="text-slate-400">Height</span><span id="val-height" class="text-indigo-400 font-mono">175 cm</span>
+          </div>
+          <input type="range" id="slider-height" min="150" max="205" value="175" class="w-full h-1 bg-slate-800 rounded appearance-none cursor-pointer" />
+        </div>
+        <div>
+          <div class="flex justify-between text-xs mb-1">
+            <span class="text-slate-400">Shoulder</span><span id="val-shoulder" class="text-indigo-400 font-mono">46 cm</span>
+          </div>
+          <input type="range" id="slider-shoulder" min="36" max="58" value="46" class="w-full h-1 bg-slate-800 rounded appearance-none cursor-pointer" />
+        </div>
+        <div>
+          <div class="flex justify-between text-xs mb-1">
+            <span class="text-slate-400">Chest</span><span id="val-chest" class="text-indigo-400 font-mono">96 cm</span>
+          </div>
+          <input type="range" id="slider-chest" min="75" max="125" value="96" class="w-full h-1 bg-slate-800 rounded appearance-none cursor-pointer" />
+        </div>
+        <div>
+          <div class="flex justify-between text-xs mb-1">
+            <span class="text-slate-400">Waist</span><span id="val-waist" class="text-indigo-400 font-mono">78 cm</span>
+          </div>
+          <input type="range" id="slider-waist" min="60" max="110" value="78" class="w-full h-1 bg-slate-800 rounded appearance-none cursor-pointer" />
+        </div>
+        <div>
+          <div class="flex justify-between text-xs mb-1">
+            <span class="text-slate-400">Leg Length</span><span id="val-leg" class="text-indigo-400 font-mono">102 cm</span>
+          </div>
+          <input type="range" id="slider-leg" min="80" max="120" value="102" class="w-full h-1 bg-slate-800 rounded appearance-none cursor-pointer" />
+        </div>
+      </div>
+    </div>
+
+    <button id="btn-export" class="w-full mt-4 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold py-2 rounded-lg transition active:scale-95">
+      📷 Export Lookbook PNG
+    </button>
+  </div>
+
+  <!-- Center Viewport -->
+  <div class="flex-1 relative flex items-center justify-center">
+    <div id="status-container" class="absolute top-5 left-5 z-20 max-w-sm"></div>
+    <div id="canvas-container" class="w-full h-full cursor-grab active:cursor-grabbing"></div>
+  </div>
+
+  <!-- Right Sidebar -->
+  <div class="w-80 bg-slate-900 border-l border-slate-800 p-5 flex flex-col justify-between overflow-y-auto z-10">
+    <div class="space-y-4">
+      <div class="text-xs font-semibold text-slate-300 uppercase border-b border-slate-800 pb-2">Wardrobe Selector</div>
+      <div>
+        <label class="text-xs text-slate-300 block mb-1">Top</label>
+        <select id="select-top" class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-xs text-slate-200"></select>
+      </div>
+      <div>
+        <label class="text-xs text-slate-300 block mb-1">Bottom</label>
+        <select id="select-bottom" class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-xs text-slate-200"></select>
+      </div>
+      <div>
+        <label class="text-xs text-slate-300 block mb-1">Footwear</label>
+        <select id="select-shoes" class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-xs text-slate-200"></select>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const TOPS = [
+      { id: "t1", name: "Crew Neck T-Shirt", formality: 2, vibe: "Casual" },
+      { id: "t2", name: "Polo Shirt", formality: 3, vibe: "Preppy" },
+      { id: "t3", name: "Dress Shirt", formality: 4, vibe: "Business" },
+      { id: "t4", name: "Tuxedo Jacket", formality: 5, vibe: "Formal" }
+    ];
+    const BOTTOMS = [
+      { id: "b1", name: "Sweatpants", formality: 1, vibe: "Athletic" },
+      { id: "b2", name: "Cargo Pants", formality: 2, vibe: "Streetwear" },
+      { id: "b3", name: "Chinos", formality: 3, vibe: "Smart Casual" },
+      { id: "b4", name: "Dress Slacks", formality: 4, vibe: "Formal" }
+    ];
+    const SHOES = [
+      { id: "s1", name: "Chunky Runners", formality: 1, conflicts: ["Dress Slacks"] },
+      { id: "s2", name: "Minimalist Sneakers", formality: 3, conflicts: [] },
+      { id: "s3", name: "Oxford Dress Shoes", formality: 5, conflicts: ["Sweatpants", "Cargo Pants"] }
+    ];
+    const SKIN_COLORS = ["#f7d0b3", "#e0ab8b", "#c68642", "#8d5524", "#493223"];
+
+    let gender = "male";
+    let measurements = { height: 175, shoulder: 46, chest: 96, waist: 78, legLength: 102 };
+    let curTop = TOPS[0];
+    let curBottom = BOTTOMS[2];
+    let curShoes = SHOES[1];
+
+    const container = document.getElementById("canvas-container");
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color("#090d16");
+
+    const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 100);
+    camera.position.set(0, 1.2, 4.5);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+    renderer.setSize(container.clientWidth, container.clientHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    container.appendChild(renderer.domElement);
+
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+
+    scene.add(new THREE.HemisphereLight(0xffffff, 0x334155, 0.8));
+    const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    dirLight.position.set(5, 10, 5);
+    scene.add(dirLight);
+
+    const group = new THREE.Group();
+    scene.add(group);
+
+    const skinMat = new THREE.MeshStandardMaterial({ color: SKIN_COLORS[1], roughness: 0.6 });
+    const clothMat = new THREE.MeshStandardMaterial({ color: "#334155", roughness: 0.8 });
+    const pantsMat = new THREE.MeshStandardMaterial({ color: "#1e293b", roughness: 0.7 });
+
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.16, 24, 24), skinMat);
+    head.position.y = 2.2; group.add(head);
+
+    const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.2, 0.7, 20), clothMat);
+    torso.position.y = 1.65; group.add(torso);
+
+    const hips = new THREE.Mesh(new THREE.SphereGeometry(0.23, 20, 20), pantsMat);
+    hips.position.y = 1.25; group.add(hips);
+
+    const legL = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.06, 1.1, 16), pantsMat);
+    const legR = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.06, 1.1, 16), pantsMat);
+    group.add(legL); group.add(legR);
+
+    function updateShape() {
+      const s = measurements.shoulder / 46;
+      const c = measurements.chest / 96;
+      const w = measurements.waist / 78;
+      const legS = measurements.legLength / 102;
+      const h = measurements.height / 175;
+
+      group.scale.set(h, h, h);
+      group.position.y = -1.1;
+
+      torso.scale.set(s, 1, c);
+      hips.scale.set(w, 1, 1);
+
+      legL.position.set(-0.15, 1.2 - 0.55 * legS, 0);
+      legL.scale.set(1, legS, 1);
+      legR.position.set(0.15, 1.2 - 0.55 * legS, 0);
+      legR.scale.set(1, legS, 1);
+    }
+
+    function validate() {
+      const issues = [];
+      if (Math.abs(curTop.formality - curBottom.formality) > 1) {
+        issues.push(`Formality Gap: ${curTop.name} (Lvl ${curTop.formality}) နှင့် ${curBottom.name} (Lvl ${curBottom.formality}) မကိုက်ညီပါ။`);
+      }
+      if (curShoes.conflicts.includes(curBottom.name)) {
+        issues.push(`Conflict: ${curShoes.name} သည် ${curBottom.name} နှင့် မသင့်တော်ပါ။`);
+      }
+
+      const box = document.getElementById("status-container");
+      if (issues.length === 0) {
+        box.innerHTML = `<div class="bg-emerald-950/80 border border-emerald-500/50 p-2.5 rounded text-emerald-200 text-xs">✅ Styling Harmony Passed</div>`;
+      } else {
+        box.innerHTML = `<div class="bg-rose-950/90 border border-rose-500/50 p-2.5 rounded text-rose-200 text-xs font-medium space-y-1">
+          <div class="font-bold">⚠️ Style Conflict</div>${issues.map(e => `<div>• ${e}</div>`).join("")}
+        </div>`;
+      }
+    }
+
+    // Controls
+    ["height", "shoulder", "chest", "waist", "leg"].forEach(k => {
+      const el = document.getElementById(`slider-${k}`);
+      el.addEventListener("input", (e) => {
+        const v = Number(e.target.value);
+        document.getElementById(`val-${k}`).innerText = `${v} cm`;
+        if (k === "leg") measurements.legLength = v;
+        else measurements[k] = v;
+        updateShape();
+      });
+    });
+
+    const skinBox = document.getElementById("skin-palettes");
+    SKIN_COLORS.forEach(c => {
+      const b = document.createElement("button");
+      b.style.backgroundColor = c;
+      b.className = "w-5 h-5 rounded-full border border-slate-700";
+      b.addEventListener("click", () => skinMat.color.set(c));
+      skinBox.appendChild(b);
+    });
+
+    const selT = document.getElementById("select-top");
+    TOPS.forEach(t => { const o = document.createElement("option"); o.value = t.id; o.innerText = t.name; selT.appendChild(o); });
+    selT.addEventListener("change", (e) => { curTop = TOPS.find(t => t.id === e.target.value); validate(); });
+
+    const selB = document.getElementById("select-bottom");
+    BOTTOMS.forEach(b => { const o = document.createElement("option"); o.value = b.id; o.innerText = b.name; if(b.id === "b3") o.selected = true; selB.appendChild(o); });
+    selB.addEventListener("change", (e) => { curBottom = BOTTOMS.find(b => b.id === e.target.value); validate(); });
+
+    const selS = document.getElementById("select-shoes");
+    SHOES.forEach(s => { const o = document.createElement("option"); o.value = s.id; o.innerText = s.name; if(s.id === "s2") o.selected = true; selS.appendChild(o); });
+    selS.addEventListener("change", (e) => { curShoes = SHOES.find(s => s.id === e.target.value); validate(); });
+
+    document.getElementById("btn-export").addEventListener("click", () => {
+      renderer.render(scene, camera);
+      const a = document.createElement("a");
+      a.download = `Lookbook_${Date.now()}.png`;
+      a.href = renderer.domElement.toDataURL("image/png");
+      a.click();
+    });
+
+    window.addEventListener("resize", () => {
+      camera.aspect = container.clientWidth / container.clientHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(container.clientWidth, container.clientHeight);
+    });
+
+    function loop() {
+      requestAnimationFrame(loop);
+      controls.update();
+      renderer.render(scene, camera);
+    }
+
+    updateShape();
+    validate();
+    loop();
+  </script>
+</body>
+</html>
